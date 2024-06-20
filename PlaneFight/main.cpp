@@ -93,6 +93,31 @@ private:
 	int y;		//定义一个x坐标和y坐标
 };
 
+class Hero
+{
+public:
+	Hero(IMAGE& img)
+		:img(img)
+	{
+		rect.left = swidth / 2 - img.getwidth() / 2;			//中间
+		rect.top = sheight - img.getheight();					//高度
+		rect.right = rect.left + img.getwidth();
+		rect.bottom = sheight;
+	}
+
+	void Show()
+	{
+		//使用鼠标控制飞机
+		putimage(rect.left, rect.top, &img);
+	}
+
+private:
+	IMAGE& img;
+	RECT rect;				//矩形边框，判断是否与敌军相撞
+
+
+};
+
 //游戏界面代码
 bool Play()
 {
