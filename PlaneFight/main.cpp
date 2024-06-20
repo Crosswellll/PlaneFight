@@ -107,14 +107,34 @@ public:
 
 	void Show()
 	{
-		//使用鼠标控制飞机
+		//生成飞机的图片
 		putimage(rect.left, rect.top, &img);
+	}
+
+	void Control()		
+	{
+		//使用鼠标控制飞机
+		ExMessage mess;
+		if (peekmessage(&mess, EX_MOUSE))		//判断是否获得消息,获取的鼠标消息
+		{
+			rect.left = mess.x - img.getwidth() / 2;		//使鼠标在图像的中心
+			rect.top = mess.y - img.getheight() / 2;
+			rect.right = rect.right = rect.left + img.getwidth();			//更新图片位置
+			rect.bottom = rect.top + img.getheight();
+
+		}
+
 	}
 
 private:
 	IMAGE& img;
 	RECT rect;				//矩形边框，判断是否与敌军相撞
 
+
+};
+
+class Enemy
+{
 
 };
 
@@ -131,15 +151,25 @@ bool Play()
 	loadimage(&bkimg, _T("H:\\CodeResource\\PlaneFight_study\\images\\bk3.png"), swidth, sheight * 2);		//进行一次格式化
 	loadimage(&bulletimg, _T("H:\\CodeResource\\PlaneFight_study\\images\\bullet1.png"));
 
-	BK bk = BK(bkimg);				//创建一个BK类
+	BK bk = BK(bkimg);				//实例化的背景对象
+	Hero hp = Hero(heroimg);			//实例化一个英雄对象，传入英雄图片
 
 	//图形界面
 
 	while (is_play)								//游戏的主循环
 	{
 		BeginBatchDraw();						//防止屏闪
+
 		bk.Show();								//调用的函数
-		Sleep(16);								//到达每秒60帧的速度
+		Sleep(1);								//
+		flushmessage();							//刷新消息的缓冲区，以获得最新的消息
+		Sleep(2);								//sleep一下再获得消息
+		hp.Control();
+										
+		hp.Show();								//生成玩家的飞机
+
+		//Sleep(16);								//到达每秒60帧的速度
+
 
 		EndBatchDraw();
 	}
