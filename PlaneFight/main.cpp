@@ -1,5 +1,6 @@
 #include<iostream>
 #include<graphics.h>//easyX
+#include<vector>		//¹ÜÀí¶à¼ÜµĞ»ú
 using namespace std;
 
 
@@ -12,6 +13,13 @@ bool PointInRec(int x, int y, RECT& r)			//´´½¨Ò»¸ö²¼¶ûÖµÀ´ÅĞ¶ÏÊó±êÊÇ·ñÔÚ¾ØĞÎ¿òÄ
 {
 	return (r.left <= x && x <= r.right && r.top <= y && y <= r.bottom);		//ÅĞ¶ÏµÄ´úÂë
 }
+
+//·ÀÖ¹µĞ»úÉú³ÉÊ±ÖØµş
+bool RectCrashRect(RECT &r1, RECT &r2)
+{
+	RECT r;			//¶¨ÒåÒ»¸ö´ó¾ØĞÎ
+}
+
 //Ò»¸ö¿ªÊ¼½çÃæ
 void Welcome()
 {
@@ -135,7 +143,34 @@ private:
 
 class Enemy
 {
+public:
+	Enemy(IMAGE& img, int x)	//ĞèÊÖ¶¯ÊäÈëÒ»¸öx×ø±ê			//ÔÚ¹¹Ôìº¯ÊıÖĞ´«Èë×Ô¼ºµÄimg
+		:img(img)
+	{
+		rect.left = x;		
+		rect.right = rect.left + img.getwidth();
+		rect.top = -img.getheight();			//Éú³ÉÔÚÆÁÄ»Íâ,ÔÙ»ºÂıÈë³¡
+		rect.bottom = 0;
+	}
 
+	bool Show()			//µĞ»úµÄÕ¹Ê¾		,Ê¹ÓÃ²¼¶ûÖµ,Èô·É³ö»­ÃæºÍ±»×Óµ¯»÷ÖĞÊ±·µ»ØÒ»¸öfalse
+	{
+		//·É³ö»­Ãæ
+		if (rect.top >= sheight)			//ÈôÍ¼Æ¬¶¥µã´óÓÚÆÁÄ»¸ß¶È,ÔòÒ»¶¨·É³öÆÁÄ»		
+		{
+			return false;
+		}
+		rect.top += 2;			//ÈôÃ»ÓĞ·É³ö,Ôò²»¶ÏÏòÏÂÒÆ¶¯
+		rect.bottom += 2;
+		putimage(rect.left, rect.top, &img);			//Éú³ÉÍ¼Æ¬
+
+		return true;
+	}
+
+
+private:
+	IMAGE& img;						//ÓĞ×Ô¼ºµÄimgÀà
+	RECT rect;				//´´½¨¾ØĞÎ¿ò¼Ü
 };
 
 //ÓÎÏ·½çÃæ´úÂë
@@ -154,6 +189,12 @@ bool Play()
 	BK bk = BK(bkimg);				//ÊµÀı»¯µÄ±³¾°¶ÔÏó
 	Hero hp = Hero(heroimg);			//ÊµÀı»¯Ò»¸öÓ¢ĞÛ¶ÔÏó£¬´«ÈëÓ¢ĞÛÍ¼Æ¬
 
+	vector<Enemy*> es;
+	for (int i = 0; i < 4; i++)
+	{
+		es.push_back(new Enemy(enemyimg, abs(rand()) % (swidth - enemyimg.getwidth())));			//³õÊ¼»¯Ò»¸öµĞ»ú,²ÎÊıÎªµĞ»úµÄÕÕÆ¬,Ëæ»úÉú³ÉÒ»¸öx×ø±ê,µ«×¢ÒâÓÒ±ßĞèÒªÁô³öºÍµĞ»ú¿í¶ÈÒ»ÑùµÄ¿í¶È
+	}
+
 	//Í¼ĞÎ½çÃæ
 
 	while (is_play)								//ÓÎÏ·µÄÖ÷Ñ­»·
@@ -161,7 +202,7 @@ bool Play()
 		BeginBatchDraw();						//·ÀÖ¹ÆÁÉÁ
 
 		bk.Show();								//µ÷ÓÃµÄº¯Êı
-		Sleep(1);								//
+		Sleep(6);								//
 		flushmessage();							//Ë¢ĞÂÏûÏ¢µÄ»º³åÇø£¬ÒÔ»ñµÃ×îĞÂµÄÏûÏ¢
 		Sleep(2);								//sleepÒ»ÏÂÔÙ»ñµÃÏûÏ¢
 		hp.Control();
@@ -170,7 +211,24 @@ bool Play()
 
 		//Sleep(16);								//µ½´ïÃ¿Ãë60Ö¡µÄËÙ¶È
 
+		auto it = es.begin();			//¶¨ÒåÒ»¸öÖ¸ÕëÈÃËûµÈÓÚÈİÆ÷µÄ³õÊ¼Î»ÖÃ	
+		while (it != es.end())			//ÈôÃ»µ½Í·,Ôò¼ÌĞø½øĞĞÑ­»·
+		{
+			if (!(*it)->Show())			//ËüÈô·µ»Øfalse,ÔòËµÃ÷·É³öÈ¥ÁË,Òª¶ÔÆä½øĞĞÏú»Ù
+			{
+				delete(*it);			//É¾³ınew³öÀ´µÄÖ¸Õë
+				/*es.erase(it);*/		//ÊÓÆµÖĞÁíÒ»¸ö·½·¨½â¾ö±¨´í
+				it = es.erase(it);			//Ê¹ÓÃÏú»Ùº¯Êı,·µ»ØitÖ¸ÕëµÄÏÂÒ»¸öÖµ,·ñÔòÃ»·¨Ñ­»·ÁË
+			}
+			else				//elseÓÃÓÚ½â¾öÒ»¸ö±¨´í
+				it++;
+						//Èç¹ûÃ»±»Ïú»Ù,Ôò¶ÔÖ¸Õë½øĞĞ++,Ö¸ÏòÏÂÒ»¸ö
+		}
 
+		for (int i = 0; i < 4 - es.size(); i++)				//¶ÔµĞ»ú¶¯Ì¬ÊıÁ¿Ôö¼Ó
+		{
+			es.push_back(new Enemy(enemyimg, abs(rand()) % (swidth - enemyimg.getwidth())));			//Ìí¼ÓµĞ»ú
+		}
 		EndBatchDraw();
 	}
 	return true;
