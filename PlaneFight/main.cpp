@@ -14,10 +14,16 @@ bool PointInRec(int x, int y, RECT& r)			//´´½¨Ò»¸ö²¼¶ûÖµÀ´ÅĞ¶ÏÊó±êÊÇ·ñÔÚ¾ØĞÎ¿òÄ
 	return (r.left <= x && x <= r.right && r.top <= y && y <= r.bottom);		//ÅĞ¶ÏµÄ´úÂë
 }
 
-//·ÀÖ¹µĞ»úÉú³ÉÊ±ÖØµş
+//Åö×²¼ì²â´úÂë
 bool RectCrashRect(RECT &r1, RECT &r2)
 {
 	RECT r;			//¶¨ÒåÒ»¸ö´ó¾ØĞÎ
+	r.left = r1.left - (r2.right - r2.left);
+	r.right = r1.right;
+	r.top = r1.top - (r2.bottom - r2.top);
+	r.bottom = r1.bottom;
+
+	return (r.left < r2.left && r2.left <= r.right && r.top <= r2.top && r2.top <= r.bottom);			//ÅĞ¶ÏÊÇ·ñÅö×²µÄ´úÂë
 }
 
 //Ò»¸ö¿ªÊ¼½çÃæ
@@ -79,7 +85,6 @@ void Welcome()
 }
 
 //±³¾°£¬µĞ»ú£¬Ó¢ĞÛ£¬×Óµ¯
-
 class BK	//±³¾°Àà
 {
 public:
@@ -134,6 +139,9 @@ public:
 
 	}
 
+	//»ñÈ¡Íæ¼Ò·É»úµÄ±ß¿ò
+	RECT& GetRect() { return rect; }
+
 private:
 	IMAGE& img;
 	RECT rect;				//¾ØĞÎ±ß¿ò£¬ÅĞ¶ÏÊÇ·ñÓëµĞ¾üÏà×²
@@ -166,7 +174,7 @@ public:
 
 		return true;
 	}
-
+	RECT& GetRect() { return rect; }
 
 private:
 	IMAGE& img;						//ÓĞ×Ô¼ºµÄimgÀà
@@ -214,6 +222,10 @@ bool Play()
 		auto it = es.begin();			//¶¨ÒåÒ»¸öÖ¸ÕëÈÃËûµÈÓÚÈİÆ÷µÄ³õÊ¼Î»ÖÃ	
 		while (it != es.end())			//ÈôÃ»µ½Í·,Ôò¼ÌĞø½øĞĞÑ­»·
 		{
+			if (RectCrashRect((*it)->GetRect(), hp.GetRect()))			//µ±Ç°¼ì²âµÄµĞ»úºÍÍæ¼Ò·É»úÊÇ·ñÏà×²,Èô·µ»ØtrueÔò´ú±íÏà×²ÁË
+			{
+				is_play = false;			//ÓÎÏ·Ê§°Ü
+			}
 			if (!(*it)->Show())			//ËüÈô·µ»Øfalse,ÔòËµÃ÷·É³öÈ¥ÁË,Òª¶ÔÆä½øĞĞÏú»Ù
 			{
 				delete(*it);			//É¾³ınew³öÀ´µÄÖ¸Õë
