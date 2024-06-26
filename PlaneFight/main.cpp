@@ -168,8 +168,8 @@ public:
 		{
 			return false;
 		}
-		rect.top += 16;			//若没有飞出,则不断向下移动
-		rect.bottom += 16;
+		rect.top += 6;			//若没有飞出,则不断向下移动
+		rect.bottom += 6;			//更改敌机飞行速度
 		putimage(rect.left, rect.top, &img);			//生成图片
 
 		return true;
@@ -181,11 +181,49 @@ private:
 	RECT rect;				//创建矩形框架
 };
 
+class Bullet
+{
+public:
+	Bullet(IMAGE& img,RECT pr)			//子弹是在我方飞机前生成的，所以也需要我方飞机的位置
+		:img(img)
+	{
+		rect.left = pr.left + (pr.right - pr.left) / 2 - img.getwidth() / 2;			//求出子弹的位置
+		rect.right = rect.left + img.getwidth();
+		rect.top = pr.top - img.getheight();
+		rect.bottom = rect.top + img.getheight();
+	}
+
+	bool Show()
+	{
+		if (rect.bottom <= 0)			//底边小于等于0，则说明子弹已经飞出
+		{
+			return false;			//不对该子弹进行刷新
+		}
+		rect.top -= 10;				//刷新位置
+		rect.bottom -= 10;			//子弹飞行速度
+		putimage(rect.left, rect.top, &img);
+	}
+
+	RECT& GetRect() { return rect; }			//返回矩形
+
+private:
+	IMAGE& img;			//img引用
+	RECT rect;
+};
+
 bool AddEnemy(vector<Enemy*> &es,IMAGE& enemyimg)			//以敌机列表作为参数
 {
-	int y = abs(rand()) % (swidth - enemyimg.getwidth());
-	
-	es.push_back(new Enemy(enemyimg,y));			//添加
+	Enemy* e = new Enemy(enemyimg, abs(rand()) % (swidth - enemyimg.getwidth()));
+	for (auto& i : es)			//for循环遍历生成好的敌机
+	{
+		if (RectCrashRect(i->GetRect(), e->GetRect()))			//当前遍历的rect和敌机生成的rect出现了碰撞
+		{
+			delete e;				//产生碰撞则删除生成的敌机
+			return false;
+		}
+	}
+	es.push_back(e);			//若没有问题，则可以生成
+	return true;
 }
 
 //游戏界面代码
@@ -204,16 +242,25 @@ bool Play()
 	BK bk = BK(bkimg);				//实例化的背景对象
 	Hero hp = Hero(heroimg);			//实例化一个英雄对象，传入英雄图片
 
-	vector<Enemy*> es;
-	for (int i = 0; i < 4; i++)
+	vector<Enemy*> es;			//敌机类指针容器
+	vector<Bullet*> bs;				//子弹类指针容器
+	int bsing = 0;
+ 	for (int i = 0; i < 5; i++)			//更改敌机数量
 	{
-		es.push_back(new Enemy(enemyimg, abs(rand()) % (swidth - enemyimg.getwidth())));			//初始化一个敌机,参数为敌机的照片,随机生成一个x坐标,但注意右边需要留出和敌机宽度一样的宽度
+		AddEnemy(es, enemyimg);			//初始化一个敌机,参数为敌机的照片,随机生成一个x坐标,但注意右边需要留出和敌机宽度一样的宽度
 	}
 
 	//图形界面
 
 	while (is_play)								//游戏的主循环
 	{
+		bsing++;
+		if (bsing == 15)			//子弹开火频率
+		{
+			bsing = 0;
+			bs.push_back(new Bullet(bulletimg, hp.GetRect()));			//生成子弹，子弹的图片和位置
+		}
+
 		BeginBatchDraw();						//防止屏闪
 
 		bk.Show();								//调用的函数
@@ -226,6 +273,11 @@ bool Play()
 
 		//Sleep(16);								//到达每秒60帧的速度
 
+		for (auto& i : bs)			//遍历生成子弹
+		{
+			i->Show();
+		}
+
 		auto it = es.begin();			//定义一个指针让他等于容器的初始位置	
 		while (it != es.end())			//若没到头,则继续进行循环
 		{
@@ -233,20 +285,34 @@ bool Play()
 			{
 				is_play = false;			//游戏失败
 			}
+			auto bit = bs.begin();			//遍历子弹销毁
+			while (bit != bs.end())
+			{
+				if (RectCrashRect((*bit)->GetRect(), (*it)->GetRect()))			//遍历检测每个子弹和敌机的位置碰撞
+				{
+					delete(*it);			//若返回为true，则说明发生碰撞，删除敌机
+					es.erase(it);
+					it = es.begin();
+					delete(*bit);			//删除子弹
+					bs.erase(bit);
+					break;
+				}
+				else bit++;
+			}
 			if (!(*it)->Show())			//它若返回false,则说明飞出去了,要对其进行销毁
 			{
 				delete(*it);			//删除new出来的指针
-				/*es.erase(it);*/		//视频中另一个方法解决报错
-				it = es.erase(it);			//使用销毁函数,返回it指针的下一个值,否则没法循环了
+				es.erase(it);		//视频中另一个方法解决报错
+				it = es.begin();			//使用销毁函数,返回it指针的下一个值,否则没法循环了
 			}
-			else				//else用于解决一个报错
+							//else用于解决一个报错
 				it++;
 						//如果没被销毁,则对指针进行++,指向下一个
 		}
 
-		for (int i = 0; i < 4 - es.size(); i++)				//对敌机动态数量增加
+		for (int i = 0; i < 5 - es.size(); i++)				//对敌机动态数量增加
 		{
-			es.push_back(new Enemy(enemyimg, abs(rand()) % (swidth - enemyimg.getwidth())));			//添加敌机
+			AddEnemy(es, enemyimg);			//添加敌机
 		}
 		EndBatchDraw();
 	}
