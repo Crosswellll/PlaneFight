@@ -168,8 +168,8 @@ public:
 		{
 			return false;
 		}
-		rect.top += 2;			//若没有飞出,则不断向下移动
-		rect.bottom += 2;
+		rect.top += 16;			//若没有飞出,则不断向下移动
+		rect.bottom += 16;
 		putimage(rect.left, rect.top, &img);			//生成图片
 
 		return true;
@@ -180,6 +180,13 @@ private:
 	IMAGE& img;						//有自己的img类
 	RECT rect;				//创建矩形框架
 };
+
+bool AddEnemy(vector<Enemy*> &es,IMAGE& enemyimg)			//以敌机列表作为参数
+{
+	int y = abs(rand()) % (swidth - enemyimg.getwidth());
+	
+	es.push_back(new Enemy(enemyimg,y));			//添加
+}
 
 //游戏界面代码
 bool Play()
